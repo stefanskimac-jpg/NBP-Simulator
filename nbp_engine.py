@@ -213,7 +213,7 @@ def solve_period(V, t, shocks, max_iter=500, tol=1e-11):
         V["UPILO"][t] = V["UPILO"][t-1] + (
             c[0] + c[1]*(V["UPILO"][t-1]-V["UPILO"][t-2])
             + c[2]*_dl(V["GDP"], t) + c[3]*_dl(V["LS"], t) + shocks["UPILO"])
-        V["UPILO"][t] = min(max(V["UPILO"][t], 0.1), 40.0)
+        V["UPILO"][t] = min(max(V["UPILO"][t], 2.0), 40.0)
         V["ET"][t] = V["LS"][t] * (1 - V["UPILO"][t]/100)
         # ---- inflation breakdown: energy (CPIFU), food (CPIFD), core (CPICORE),
         #      then headline CPI as the weighted identity ----
