@@ -331,7 +331,7 @@ with c1:
     if not ss.game_over:
         st.subheader(f"🗳️ Decide: **{qlabel(dates[t_cur])}**")
         st.number_input("NBP reference rate, %", min_value=0.0,
-                        max_value=25.0, step=0.25, format="%.2f",
+                        step=0.25, format="%.2f",
                         key="rate_input",
                         help="Use ▲▼ to move in 0.25 pp steps. "
                              "Default = last quarter’s rate.")
