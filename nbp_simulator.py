@@ -450,9 +450,14 @@ proj = E.project(V, t_cur, FCAST, hold_rate) if t_cur <= end_idx else \
 gdp_r, cpi_r = E.yoy(V["GDP"]), E.yoy(V["CPI"])
 gdp_f, cpi_f = E.yoy(proj["GDP"]), E.yoy(proj["CPI"])
 core_r, core_f = E.yoy(V["CPICORE"]), E.yoy(proj["CPICORE"])
+# actual (published) history, for comparison during a historical replay
+cpi_a, gdp_a = E.yoy(ss.V0["CPI"]), E.yoy(ss.V0["GDP"])
+# only meaningful when the game started in the past: in a pure-forecast game
+# the realised path IS the actual data, so the extra line would be redundant.
+show_actual = ss.start <= hist_end
 hist_range = list(range(max(0, t_cur - MAIN_HIST), t_cur))
 fc_range = list(range(t_cur, min(t_cur + FCAST, end_idx + 1)))
-def main_chart(r, f, title):
+def main_chart(r, f, title, actual=None, actual_name="Actual (history)"):
     fig = go.Figure()
     xr = [qlabel(dates[i]) for i in hist_range]
     xf = [qlabel(dates[i]) for i in fc_range]
@@ -464,6 +469,17 @@ def main_chart(r, f, title):
                       y=[r[hist_range[-1]]] + [f[i] for i in fc_range],
                       mode="lines+markers", name="Forecast (rate held)",
                       line=dict(color="#d1495b", width=2, dash="dash")))
+    # during a historical replay, overlay what ACTUALLY happened, so the player
+    # can see how their policy path diverges from the realised record.
+    if actual is not None and show_actual:
+        a_idx = [i for i in hist_range if i <= hist_end]
+        if a_idx:
+            fig.add_trace(go.Scatter(
+                x=[qlabel(dates[i]) for i in a_idx],
+                y=[actual[i] for i in a_idx],
+                mode="lines", name=actual_name,
+                line=dict(color="#8a8f98", width=1.5, dash="dot"),
+                hovertemplate="%{x}: %{y:.2f}% (actual)<extra></extra>"))
     fig.update_layout(title=dict(text=title, x=0.5, xanchor="center"),
                       yaxis_title="% y/y", height=360,
                       margin=dict(l=10, r=10, t=40, b=80),
@@ -474,7 +490,8 @@ def main_chart(r, f, title):
 st.markdown("### 📈 Inflation & growth — 20q history + 12q forecast")
 m1, m2 = st.columns(2)
 with m1:
-    fig = main_chart(cpi_r, cpi_f, "Headline & core CPI inflation (% y/y)")
+    fig = main_chart(cpi_r, cpi_f, "Headline & core CPI inflation (% y/y)",
+                     actual=cpi_a, actual_name="Headline — actual (history)")
     # overlay core inflation (realised + rate-held forecast)
     xr = [qlabel(dates[i]) for i in hist_range]
     xf = [qlabel(dates[i]) for i in fc_range]
@@ -488,17 +505,21 @@ with m1:
             y=[core_r[hist_range[-1]]] + [core_f[i] for i in fc_range],
             mode="lines+markers", name="Core — forecast",
             line=dict(color="#b08fd6", width=2, dash="dot")))
-    # rename the headline traces for clarity
-    fig.data[0].name = "Headline — realised"
-    if len(fig.data) > 1:
-        fig.data[1].name = "Headline — forecast (rate held)"
+    # rename the headline traces for clarity (match by name, not position, so
+    # the optional "actual" trace can't be renamed by mistake)
+    for _tr in fig.data:
+        if _tr.name == "Realised":
+            _tr.name = "Headline — realised"
+        elif _tr.name == "Forecast (rate held)":
+            _tr.name = "Headline — forecast (rate held)"
     fig.add_hrect(y0=TARGET-BAND, y1=TARGET+BAND, fillcolor="green",
                   opacity=0.08, line_width=0)
     fig.add_hline(y=TARGET, line_dash="dot", line_color="green",
                   annotation_text="target 2.5%")
     st.plotly_chart(fig, use_container_width=True)
 with m2:
-    st.plotly_chart(main_chart(gdp_r, gdp_f, "Real GDP growth (% y/y)"),
+    st.plotly_chart(main_chart(gdp_r, gdp_f, "Real GDP growth (% y/y)",
+                               actual=gdp_a),
                     use_container_width=True)
 # ---------- panel: other endogenous variables (last 20 quarters) -----------
 st.markdown("### 🧭 Other key macroeconomic variables — last 20 quarters")
