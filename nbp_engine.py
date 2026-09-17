@@ -30,8 +30,8 @@ COEF = {
     "GDP_EA": [0.0026484, 0.1948505, -0.0008987, -0.1140358, 0.0423129],
     "GOV":    [-0.1372427, 0.0005877],           # + fixed constant 0.008
     "RXEURO": [0.0006654, 0.1658873, -0.0069962],
-    "YHAT":   [0.0051753, 1.2078064, -0.3881609, -0.1558138, -0.0001615,
-               -1.454e-05, 0.0188316, -0.0124695],
+    "YHAT":   [0.0042287, 1.1111727, -0.4026618, -0.1371729, -0.0001637,
+               -9.965e-06, 0.0199514, -0.0052014, 0.0990786],
     "RXD_EA": [-0.0007258, 0.3533210, -0.1504215],
     "UPILO":  [0.0448500, 0.6460633, -8.3148628, 20.068489],
     "WPO":    [-12.853889, 1.0982112, -0.1470449, 400.86014, 30.812134,
@@ -102,7 +102,8 @@ def actual_shocks(V, t):
                  - (c[0] + c[1]*_dl(V["YHAT"], t-1) + c[2]*_dl(V["YHAT"], t-2)
                     + c[3]*_dl(V["YHAT"], t-3) + c[4]*(V["COVID"][t]-V["COVID"][t-1])
                     + c[5]*V["YHAT"][t-1]/V["GDP_EA"][t-1] + c[6]*V["DUM20Q2"][t]
-                    + c[7]*(V["DUM20Q2"][t]-V["DUM20Q2"][t-1])))
+                    + c[7]*(V["DUM20Q2"][t]-V["DUM20Q2"][t-1])
+                    + c[8]*_dl(V["GDP"], t)))
     def cum(k):
         return (V["GDP"][k]-V["YHAT"][k])/V["YHAT"][k]*100
     c = COEF["GDP"]
@@ -198,7 +199,8 @@ def solve_period(V, t, shocks, max_iter=500, tol=1e-11):
             c[0] + c[1]*_dl(V["YHAT"], t-1) + c[2]*_dl(V["YHAT"], t-2)
             + c[3]*_dl(V["YHAT"], t-3) + c[4]*(V["COVID"][t]-V["COVID"][t-1])
             + c[5]*V["YHAT"][t-1]/V["GDP_EA"][t-1] + c[6]*V["DUM20Q2"][t]
-            + c[7]*(V["DUM20Q2"][t]-V["DUM20Q2"][t-1]) + shocks["YHAT"])
+            + c[7]*(V["DUM20Q2"][t]-V["DUM20Q2"][t-1])
+            + c[8]*_dl(V["GDP"], t) + shocks["YHAT"])
         V["ET"][t] = V["LS"][t] * (1 - V["UPILO"][t]/100)
         c = COEF["GDP"]
         erce = (np.log(V["ER"][t]/V["CPI"][t]*V["ET"][t])
@@ -213,7 +215,7 @@ def solve_period(V, t, shocks, max_iter=500, tol=1e-11):
         V["UPILO"][t] = V["UPILO"][t-1] + (
             c[0] + c[1]*(V["UPILO"][t-1]-V["UPILO"][t-2])
             + c[2]*_dl(V["GDP"], t) + c[3]*_dl(V["LS"], t) + shocks["UPILO"])
-        V["UPILO"][t] = min(max(V["UPILO"][t], 2.0), 40.0)
+        V["UPILO"][t] = min(max(V["UPILO"][t], 0.1), 40.0)
         V["ET"][t] = V["LS"][t] * (1 - V["UPILO"][t]/100)
         # ---- inflation breakdown: energy (CPIFU), food (CPIFD), core (CPICORE),
         #      then headline CPI as the weighted identity ----
