@@ -21,8 +21,8 @@ COEF = {
     "CPICORE":    [0.4348811, 0.2711221, 0.0002926, 0.0722825, 0.1176052,
                    0.0187040, 0.0491025, 0.0653273],
     "CPICORE_EA": [-5.202e-05, 0.9476215, 0.0041660, 3.102e-05, -0.0139773],
-    "CPIFD":      [0.0012941, 0.3417762, 0.2973576, 0.1982597, 0.1999393,
-                   0.1272386, 0.2056404, 0.0018256],
+    "CPIFD":      [0.0017199, 0.3141598, 0.3031313, 0.2077018, 0.2244531,
+                   0.1108589, 0.1571880, -0.1540356, -0.0777722, 0.1236263],
     "ER":     [0.0060742, 0.2297092, 0.1655492, 0.2846569, -0.0344416, 0.0518027],
     "GB":     [9.5423318, 0.5999016, -48.099453, -4.3003161, -7.7162334],
     "GDP":    [0.0077582, 0.1378909, 0.0979589, 0.5526196, -0.0006144,
@@ -133,7 +133,9 @@ def actual_shocks(V, t):
                   - (c[0]*cum(t) + c[1]*ulc + c[2]*_dl(V["CPIFD"], t-4)
                      + c[3]*_dl(V["CPIFD"], t-8) + c[4]*_dl(V["CPIFD"], t-12)
                      + c[5]*_dl(V["RXEURO"], t-1) + c[6]*_dl(V["CPIFU"], t)
-                     + c[7]*(np.log(V["CPIFD"][t-1]) - logulc1)))
+                     + c[7]
+                     + c[8]*(np.log(V["CPIFD"][t-1]) - logulc1)
+                     + c[9]*_dl(V["CPIFD"], t-1)))
     c = COEF["CPICORE"]
     s["CPICORE"] = (_dl(V["CPICORE"], t)
                     - (c[0]*_dl(V["CPICORE"], t-1) + c[1]*_dl(V["CPICORE_EA"], t)
@@ -235,7 +237,9 @@ def solve_period(V, t, shocks, max_iter=500, tol=1e-11):
             c[0]*V["CUMOD"][t] + c[1]*ulc + c[2]*_dl(V["CPIFD"], t-4)
             + c[3]*_dl(V["CPIFD"], t-8) + c[4]*_dl(V["CPIFD"], t-12)
             + c[5]*_dl(V["RXEURO"], t-1) + c[6]*_dl(V["CPIFU"], t)
-            + c[7]*(np.log(V["CPIFD"][t-1]) - logulc1) + shocks["CPIFD"])
+            + c[7]
+            + c[8]*(np.log(V["CPIFD"][t-1]) - logulc1)
+            + c[9]*_dl(V["CPIFD"], t-1) + shocks["CPIFD"])
         c = COEF["CPICORE"]
         V["CPICORE"][t] = V["CPICORE"][t-1] * np.exp(
             c[0]*_dl(V["CPICORE"], t-1) + c[1]*_dl(V["CPICORE_EA"], t)
