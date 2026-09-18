@@ -34,14 +34,14 @@ COEF = {
                -9.965e-06, 0.0199514, -0.0052014, 0.0990786],
     "RXD_EA": [-0.0007258, 0.3533210, -0.1504215],
     "UPILO":  [0.0448500, 0.6460633, -8.3148628, 20.068489],
-    "WPO":    [-12.853889, 1.0982112, -0.1470449, 400.86014, 30.812134,
-               79.164554, 12.679196],
+    "WPO":    [-0.0297631, 0.1434209, 6.0594799, 0.2449810, 1.0662600,
+               -0.0356356],
 }
 SE = {
     "CPIFU": 0.01, "CPICORE": 0.0023, "CPICORE_EA": 0.002, "CPIFD": 0.009,
     "ER": 0.007, "GB": 1.1340887,
     "GDP": 0.0045, "GDP_EA": 0.0033, "GOV": 0.0195674, "RXEURO": 0.0327465,
-    "YHAT": 0.0017596, "RXD_EA": 0.0359080, "UPILO": 0.23, "WPO": 8.2630845,
+    "YHAT": 0.0017596, "RXD_EA": 0.0359080, "UPILO": 0.23, "WPO": 0.1322566,
 }
 STOCH_VARS = list(SE.keys())
 ALL_VARS = ["CPI", "GC", "ET", "RXD", "RXEURO", "GDP", "GB", "RCB", "GI", "GOV",
@@ -79,11 +79,13 @@ def actual_shocks(V, t):
                       + c[3]*(V["DUM20Q2"][t]-V["DUM20Q2"][t-1])
                       + c[4]*V["DUM20Q2"][t]))
     c = COEF["WPO"]
-    s["WPO"] = (V["WPO"][t]
-                - (c[0] + c[1]*V["WPO"][t-1] + c[2]*V["WPO"][t-2]
-                   + c[3]*_dl(V["GDP_EA"], t)
-                   + c[4]*(V["DUM20Q2"][t]-V["DUM20Q2"][t-1])
-                   + c[5]*_dl(V["RXD_EA"], t) + c[6]*V["RXD_EA"][t]))
+    s["WPO"] = (_dl(V["WPO"], t)
+                - (c[0] + c[1]*_dl(V["WPO"], t-1)
+                   + c[2]*_dl(V["GDP_EA"], t)
+                   + c[3]*(V["DUM20Q2"][t]-V["DUM20Q2"][t-1])
+                   + c[4]*_dl(V["RXD_EA"], t)
+                   + c[5]*(np.log(V["WPO"][t-1]) - np.log(V["CPICORE_EA"][t-1])
+                           - np.log(V["RXD_EA"][t-1]))))
     c = COEF["CPICORE_EA"]
     s["CPICORE_EA"] = (_dl(V["CPICORE_EA"], t)
                        - (c[0] + c[1]*_dl(V["CPICORE_EA"], t-4)
@@ -176,13 +178,13 @@ def solve_period(V, t, shocks, max_iter=500, tol=1e-11):
             + c[3]*(V["DUM20Q2"][t]-V["DUM20Q2"][t-1])
             + c[4]*V["DUM20Q2"][t] + shocks["GDP_EA"])
         c = COEF["WPO"]
-        V["WPO"][t] = (c[0] + c[1]*V["WPO"][t-1] + c[2]*V["WPO"][t-2]
-                       + c[3]*_dl(V["GDP_EA"], t)
-                       + c[4]*(V["DUM20Q2"][t]-V["DUM20Q2"][t-1])
-                       + c[5]*_dl(V["RXD_EA"], t) + c[6]*V["RXD_EA"][t]
-                       + shocks["WPO"])
-        if V["WPO"][t] < 1.0:
-            V["WPO"][t] = 1.0
+        V["WPO"][t] = V["WPO"][t-1] * np.exp(
+            c[0] + c[1]*_dl(V["WPO"], t-1) + c[2]*_dl(V["GDP_EA"], t)
+            + c[3]*(V["DUM20Q2"][t]-V["DUM20Q2"][t-1])
+            + c[4]*_dl(V["RXD_EA"], t)
+            + c[5]*(np.log(V["WPO"][t-1]) - np.log(V["CPICORE_EA"][t-1])
+                    - np.log(V["RXD_EA"][t-1]))
+            + shocks["WPO"])
         c = COEF["CPICORE_EA"]
         V["CPICORE_EA"][t] = V["CPICORE_EA"][t-1] * np.exp(
             c[0] + c[1]*_dl(V["CPICORE_EA"], t-4)
