@@ -2,7 +2,7 @@
 NBP Simulator  -  an interactive monetary-policy game (Streamlit).
 Run with:   streamlit run nbp_simulator.py
 Keep "Model of Polish economy.xlsx" in the same folder (or use the sidebar
-uploader). The game reads the 3rd sheet.
+uploader). The game reads the first sheet of the workbook.
 """
 import os
 import numpy as np
@@ -13,7 +13,7 @@ import streamlit as st
 import nbp_engine as E
 import nbp_data as D
 DATA_PATH = "Model of Polish economy.xlsx"
-SHEET     = 2
+SHEET     = 0
 TARGET    = E.INFLATION_TARGET      # 2.5%
 BAND      = 1.0                     # +/- 1 pp tolerance band
 MAIN_HIST = 20                      # history quarters in the two main charts
@@ -272,7 +272,7 @@ def end_game():
     st.session_state.game_over = True
 # ---------------------------------------------------------------------------
 st.sidebar.header("⚙️ Setup")
-up = st.sidebar.file_uploader("Upload workfile (.xlsx, 3rd sheet)", type=["xlsx"])
+up = st.sidebar.file_uploader("Upload workfile (.xlsx)", type=["xlsx"])
 START_MIN, START_MAX = "2007Q2", "2026Q3"
 start_choices = [f"{p.year}Q{p.quarter}"
                  for p in pd.period_range(START_MIN, START_MAX, freq="Q")]

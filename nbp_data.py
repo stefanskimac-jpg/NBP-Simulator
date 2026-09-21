@@ -1,9 +1,10 @@
 """
-nbp_data.py  -  load the model workfile (3rd sheet) for the NBP Simulator.
+nbp_data.py  -  load the model workfile for the NBP Simulator.
 
-Maps columns by position of the 3rd sheet, which is laid out as:
+Maps columns by position of the (single) data sheet, which is laid out as:
   date, CPI, GC, ET, RXD, RXEURO, GDP, GB, RCB, GI, GOV, CUMOD, YHAT, LS,
-  UPILO, ER, COVID, CPI_EA, RXD_EA, GDP_EA, COVID_EA, WPO, DUM20Q2
+  UPILO, ER, COVID, CPI_EA, RXD_EA, GDP_EA, COVID_EA, WPO, DUM20Q2,
+  CPIFU_WEIGHT, CPIFU_WEIGHT, CPICORE, CPIFD_WEIGHT, CPIFD, CPIFU, CPICORE_EA
 
 Exogenous variables (RCB, LS, COVID, COVID_EA, DUM20Q2) already run to 2055Q4.
 """
@@ -14,7 +15,7 @@ import nbp_engine as E
 
 GAME_END = "2055Q4"
 
-SHEET3_COLS = ["date", "CPI", "GC", "ET", "RXD", "RXEURO", "GDP", "GB", "RCB",
+SHEET_COLS = ["date", "CPI", "GC", "ET", "RXD", "RXEURO", "GDP", "GB", "RCB",
                "GI", "GOV", "CUMOD", "YHAT", "LS", "UPILO", "ER", "COVID",
                "CPI_EA", "RXD_EA", "GDP_EA", "COVID_EA", "WPO", "DUM20Q2",
                # --- inflation breakdown (new columns) ---
@@ -37,14 +38,14 @@ def _parse_dates(series):
     return out
 
 
-def load_workfile(xlsx_path, sheet=2):
+def load_workfile(xlsx_path, sheet=0):
     body = pd.read_excel(xlsx_path, sheet_name=sheet, header=None, skiprows=2)
-    body = body.iloc[:, :len(SHEET3_COLS)]
-    body.columns = SHEET3_COLS
+    body = body.iloc[:, :len(SHEET_COLS)]
+    body.columns = SHEET_COLS
 
     dates = _parse_dates(body["date"].tolist())
     df = pd.DataFrame({"date": dates})
-    for c in SHEET3_COLS[1:]:
+    for c in SHEET_COLS[1:]:
         df[c] = pd.to_numeric(body[c], errors="coerce").values
     df = df[~df["date"].isna()].reset_index(drop=True).set_index("date")
 
